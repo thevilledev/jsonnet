@@ -137,10 +137,21 @@ if mkdir -p "out/fmt_inplace" && cp "test.jsonnet" "out/fmt_inplace/test.jsonnet
     check_file "fmt_inplace" "out/fmt_inplace/test.jsonnet" "fmt_simple_out.golden.custom_output"
     # Verify that running jsonnetfmt on an already formatted file does not change timesetamps
     touch -m -t 199108252057.08 "out/fmt_inplace/test.jsonnet"
-    stat -c '%y' "out/fmt_inplace/test.jsonnet" > "out/fmt_inplace/stat_mod_time_before.txt"
+
+    # Create a reference file with the same timestamp
+    touch -r "out/fmt_inplace/test.jsonnet" "out/fmt_inplace/reference_file"
+    echo "before" > "out/fmt_inplace/was_modified.txt"
+
     do_fmt_test "fmt_inplace" 0 -i "out/fmt_inplace/test.jsonnet"
-    stat -c '%y' "out/fmt_inplace/test.jsonnet" > "out/fmt_inplace/stat_mod_time_after.txt"
-    check_file "fmt_inplace" "out/fmt_inplace/stat_mod_time_before.txt" "out/fmt_inplace/stat_mod_time_after.txt"
+
+    # Check if the file was modified after formatting
+    if [ "out/fmt_inplace/test.jsonnet" -nt "out/fmt_inplace/reference_file" ]; then
+        echo "modified" > "out/fmt_inplace/was_modified.txt"
+    else
+        echo "before" > "out/fmt_inplace/was_modified.txt"
+    fi
+
+    check_file "fmt_inplace" "out/fmt_inplace/was_modified.txt" "fmt_inplace.golden.was_modified.txt"
 fi
 
 fi
